@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -27,8 +28,13 @@ namespace TestEmguCVDnn
         private float xRate = 1.0f;
         private float yRate = 1.0f;
         private Net net;
-        private string protoPath = @"E:\Programing\FaceDetection\DemoEmguCVDnn\TestEmguCVDnn\Models\deploy.prototxt";
-        private string caffemodelPath = @"E:\Programing\FaceDetection\DemoEmguCVDnn\TestEmguCVDnn\Models\res10_300x300_ssd_iter_140000.caffemodel";
+        //@"~/resource/deploy.prototxt";
+        //@"~/resource/res10_300x300_ssd_iter_140000.caffemodel"
+        private string protoPath = Path.GetFullPath("Models/deploy.prototxt");
+        private string caffemodelPath = Path.GetFullPath("Models/res10_300x300_ssd_iter_140000.caffemodel");
+
+        //private string protoPath = @"C:\Users\Gun\Desktop\Test\EmguCvFaceAndEyesDetection\DemoEmguCVDnn\TestEmguCVDnn\Models\deploy.prototxt";
+        //private string caffemodelPath = @"C:\Users\Gun\Desktop\Test\EmguCvFaceAndEyesDetection\DemoEmguCVDnn\TestEmguCVDnn\Models\res10_300x300_ssd_iter_140000.caffemodel";
         private CascadeClassifier eyes_detect;
 
         private string text;
@@ -37,7 +43,7 @@ namespace TestEmguCVDnn
             InitializeComponent();
             try
             {
-                eyes_detect = new CascadeClassifier(@"E:\Programing\FaceDetection\DemoEmguCVDnn\TestEmguCVDnn\haarcascade_eye.xml");
+                eyes_detect = new CascadeClassifier(Path.GetFullPath("Models/haarcascade_eye.xml"));
 
                 xRate = resolutionX / (float)detectionSize;
                 yRate = resolutionY / (float)detectionSize;
@@ -48,6 +54,7 @@ namespace TestEmguCVDnn
                 camera = new VideoCapture(cameraIndex);
                 camera.SetCaptureProperty(Emgu.CV.CvEnum.CapProp.FrameWidth, resolutionX);
                 camera.SetCaptureProperty(Emgu.CV.CvEnum.CapProp.FrameHeight, resolutionY);
+                //camera.FlipHorizontal = true;
 
             }
             catch (NullReferenceException ex)
@@ -66,7 +73,7 @@ namespace TestEmguCVDnn
                     Image<Gray, Byte> grayImage = frame.Convert<Gray, byte>();
                     var StoreEyes = eyes_detect.DetectMultiScale(grayImage);
 
-                    //CvInvoke.Flip(frame, frame, Emgu.CV.CvEnum.FlipType.Horizontal);
+                    CvInvoke.Flip(frame, frame, Emgu.CV.CvEnum.FlipType.Horizontal);
                     Mat blobs = DnnInvoke.BlobFromImage(frame, 1.0, new System.Drawing.Size(detectionSize, detectionSize));
                     net.SetInput(blobs);
                     Mat detections = net.Forward();
@@ -98,24 +105,24 @@ namespace TestEmguCVDnn
                             {
                                 //frame.Draw(hEye, new Bgr(0, double.MaxValue, 0), 3);
                                 var avgEyes = StoreEyes?.Average(it => (it.Right + it.Left) / 2) ?? 0;
-                                var turnLeft = (Xstart + Xend) * 0.52;
-                                var turnRight = (Xstart + Xend) * 0.48;
+                                var turnLeft = (Xstart + Xend) * 0.58;
+                                var turnRight = (Xstart + Xend) * 0.42;
                                 Console.WriteLine($"Xstart in Eyes = {Xstart}");
                                 Console.WriteLine($"Ystart in Eyes = {Ystart}");
                                 Console.WriteLine($"turnLeft = {turnLeft}");
                                 Console.WriteLine($"turnRight = {turnRight}");
                                 Console.WriteLine($"avgEyes = {avgEyes}");
-                                if (avgEyes > turnLeft)
+                                if (avgEyes <= turnLeft && avgEyes >= turnRight)
                                 {
-                                    text = "Turn Left";
+                                    text = "facing straight";
+                                }
+                                else if (avgEyes > turnLeft)
+                                {
+                                    text = "turn left";
                                 }
                                 else if (avgEyes < turnRight)
                                 {
-                                    text = "Turn Right";
-                                }
-                                else
-                                {
-                                    text = "Default";
+                                    text = "turn right";
                                 }
                             }
                             CvInvoke.PutText(frame, text, new Point(rect.X - 2, rect.Y - 2), Emgu.CV.CvEnum.FontFace.HersheySimplex, 1.0, new Bgr(Color.Red).MCvScalar);
