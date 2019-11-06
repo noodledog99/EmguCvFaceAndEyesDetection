@@ -30,8 +30,8 @@ namespace TestEmguCVDnn
         private Net net;
         //@"~/resource/deploy.prototxt";
         //@"~/resource/res10_300x300_ssd_iter_140000.caffemodel"
-        private string protoPath = Path.GetFullPath("Models/deploy.prototxt");
-        private string caffemodelPath = Path.GetFullPath("Models/res10_300x300_ssd_iter_140000.caffemodel");
+        private string protoPath = @"E:\Programing\FaceDetection\EmguCvFaceAndEyesDetection\DemoEmguCVDnn\TestEmguCVDnn\Models\deploy.prototxt";
+        private string caffemodelPath = @"E:\Programing\FaceDetection\EmguCvFaceAndEyesDetection\DemoEmguCVDnn\TestEmguCVDnn\Models\res10_300x300_ssd_iter_140000.caffemodel";
 
         //private string protoPath = @"C:\Users\Gun\Desktop\Test\EmguCvFaceAndEyesDetection\DemoEmguCVDnn\TestEmguCVDnn\Models\deploy.prototxt";
         //private string caffemodelPath = @"C:\Users\Gun\Desktop\Test\EmguCvFaceAndEyesDetection\DemoEmguCVDnn\TestEmguCVDnn\Models\res10_300x300_ssd_iter_140000.caffemodel";
@@ -43,7 +43,7 @@ namespace TestEmguCVDnn
             InitializeComponent();
             try
             {
-                eyes_detect = new CascadeClassifier(Path.GetFullPath("Models/haarcascade_eye.xml"));
+                eyes_detect = new CascadeClassifier(@"E:\Programing\FaceDetection\EmguCvFaceAndEyesDetection\DemoEmguCVDnn\TestEmguCVDnn\haarcascade_eye.xml");
 
                 xRate = resolutionX / (float)detectionSize;
                 yRate = resolutionY / (float)detectionSize;
@@ -73,61 +73,70 @@ namespace TestEmguCVDnn
                     Image<Gray, Byte> grayImage = frame.Convert<Gray, byte>();
                     var StoreEyes = eyes_detect.DetectMultiScale(grayImage);
 
-                    CvInvoke.Flip(frame, frame, Emgu.CV.CvEnum.FlipType.Horizontal);
+                    //CvInvoke.Flip(frame, frame, Emgu.CV.CvEnum.FlipType.Horizontal);
                     Mat blobs = DnnInvoke.BlobFromImage(frame, 1.0, new System.Drawing.Size(detectionSize, detectionSize));
                     net.SetInput(blobs);
                     Mat detections = net.Forward();
 
                     float[,,,] detectionsArrayInFloats = detections.GetData() as float[,,,];
 
-                    for (int i = 0; i < detectionsArrayInFloats.GetLength(2); i++)
+                    System.Drawing.Rectangle rect = new System.Drawing.Rectangle
                     {
-                        if (Convert.ToSingle(detectionsArrayInFloats[0, 0, i, 2], CultureInfo.InvariantCulture) > 0.4)
-                        {
-                            float Xstart = Convert.ToSingle(detectionsArrayInFloats[0, 0, i, 3],
-                                CultureInfo.InvariantCulture) * detectionSize * xRate;
-                            float Ystart = Convert.ToSingle(detectionsArrayInFloats[0, 0, i, 4],
-                                CultureInfo.InvariantCulture) * detectionSize * yRate;
-                            float Xend = Convert.ToSingle(detectionsArrayInFloats[0, 0, i, 5],
-                                CultureInfo.InvariantCulture) * detectionSize * xRate;
-                            float Yend = Convert.ToSingle(detectionsArrayInFloats[0, 0, i, 6],
-                                CultureInfo.InvariantCulture) * detectionSize * yRate;
+                        X = 600,
+                        Y = 600,
+                        Height = 600,
+                        Width = 600
+                    };
+                    frame.Draw(rect, new Bgr(0, 255, 0), 2);
 
-                            System.Drawing.Rectangle rect = new System.Drawing.Rectangle
-                            {
-                                X = (int)Xstart,
-                                Y = (int)Ystart,
-                                Height = (int)(Yend - Ystart),
-                                Width = (int)(Xend - Xstart)
-                            };
-                            frame.Draw(rect, new Bgr(0, 255, 0), 2);
-                            foreach (var hEye in StoreEyes)
-                            {
-                                //frame.Draw(hEye, new Bgr(0, double.MaxValue, 0), 3);
-                                var avgEyes = StoreEyes?.Average(it => (it.Right + it.Left) / 2) ?? 0;
-                                var turnLeft = (Xstart + Xend) * 0.58;
-                                var turnRight = (Xstart + Xend) * 0.42;
-                                Console.WriteLine($"Xstart in Eyes = {Xstart}");
-                                Console.WriteLine($"Ystart in Eyes = {Ystart}");
-                                Console.WriteLine($"turnLeft = {turnLeft}");
-                                Console.WriteLine($"turnRight = {turnRight}");
-                                Console.WriteLine($"avgEyes = {avgEyes}");
-                                if (avgEyes <= turnLeft && avgEyes >= turnRight)
-                                {
-                                    text = "facing straight";
-                                }
-                                else if (avgEyes > turnLeft)
-                                {
-                                    text = "turn left";
-                                }
-                                else if (avgEyes < turnRight)
-                                {
-                                    text = "turn right";
-                                }
-                            }
-                            CvInvoke.PutText(frame, text, new Point(rect.X - 2, rect.Y - 2), Emgu.CV.CvEnum.FontFace.HersheySimplex, 1.0, new Bgr(Color.Red).MCvScalar);
-                        }
-                    }
+                    //for (int i = 0; i < detectionsArrayInFloats.GetLength(2); i++)
+                    //{
+                    //    if (Convert.ToSingle(detectionsArrayInFloats[0, 0, i, 2], CultureInfo.InvariantCulture) > 0.4)
+                    //    {
+                    //        float Xstart = Convert.ToSingle(detectionsArrayInFloats[0, 0, i, 3],
+                    //            CultureInfo.InvariantCulture) * detectionSize * xRate;
+                    //        float Ystart = Convert.ToSingle(detectionsArrayInFloats[0, 0, i, 4],
+                    //            CultureInfo.InvariantCulture) * detectionSize * yRate;
+                    //        float Xend = Convert.ToSingle(detectionsArrayInFloats[0, 0, i, 5],
+                    //            CultureInfo.InvariantCulture) * detectionSize * xRate;
+                    //        float Yend = Convert.ToSingle(detectionsArrayInFloats[0, 0, i, 6],
+                    //            CultureInfo.InvariantCulture) * detectionSize * yRate;
+
+                    //        System.Drawing.Rectangle rect = new System.Drawing.Rectangle
+                    //        {
+                    //            X = (int)Xstart,
+                    //            Y = (int)Ystart,
+                    //            Height = (int)(Yend - Ystart),
+                    //            Width = (int)(Xend - Xstart)
+                    //        };
+                    //        frame.Draw(rect, new Bgr(0, 255, 0), 2);
+                    //        foreach (var hEye in StoreEyes)
+                    //        {
+                    //            frame.Draw(hEye, new Bgr(0, double.MaxValue, 0), 3);
+                    //            var avgEyes = StoreEyes?.Average(it => (it.Right + it.Left) / 2) ?? 0;
+                    //            var turnLeft = (Xstart + Xend) * 0.58;
+                    //            var turnRight = (Xstart + Xend) * 0.42;
+                    //            Console.WriteLine($"Xstart in Eyes = {Xstart}");
+                    //            Console.WriteLine($"Ystart in Eyes = {Ystart}");
+                    //            Console.WriteLine($"turnLeft = {turnLeft}");
+                    //            Console.WriteLine($"turnRight = {turnRight}");
+                    //            Console.WriteLine($"avgEyes = {avgEyes}");
+                    //            if (avgEyes <= turnLeft && avgEyes >= turnRight)
+                    //            {
+                    //                text = "facing straight";
+                    //            }
+                    //            else if (avgEyes > turnLeft)
+                    //            {
+                    //                text = "turn left";
+                    //            }
+                    //            else if (avgEyes < turnRight)
+                    //            {
+                    //                text = "turn right";
+                    //            }
+                    //        }
+                    //        CvInvoke.PutText(frame, text, new Point(rect.X - 2, rect.Y - 2), Emgu.CV.CvEnum.FontFace.HersheySimplex, 1.0, new Bgr(Color.Red).MCvScalar);
+                    //    }
+                    //}
                     imageBox1.Image = frame;
                 }
             }
